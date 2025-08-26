@@ -1,20 +1,11 @@
 # Packages import
-import os
-from tqdm.notebook import tqdm
-from dotenv import load_dotenv
 import image_handling
 import utils
-from pathlib import Path
-
-# Loading .env file
-load_dotenv()
 
 # Project variables : to change for your configuration
 image_dir = "content/IMG"
 resized_dir = "content/IMG_resized"
 max_images = 2
-
-api_token = os.getenv("HUGGINGFACE_API_TOKEN")
 
 # Check if all directories are present.
 if not utils.startup_check(image_dir, resized_dir):
