@@ -6,6 +6,7 @@ import base64
 import io
 import numpy as np
 import os
+import time
 
 # Contains all label index used by the model.
 CLASS_MAPPING = {
@@ -142,11 +143,42 @@ def segmentation_query(data: bytes, api_url: str, headers: dict[str, str]):
       api_url (str): URL to send the data to.
       headers (dict): Headers of the request. Must contains Authorization and Content-Type.
     """
-    try:
-        response = requests.post(url=api_url, data=data, headers=headers)
-        return response.json()
-    except Exception as e:
-        print(e)
+    # Trying a maximum of 3 times
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                url=api_url, data=data, headers=headers, timeout=30
+            )
+
+            # Raise an error in case of failure
+            response.raise_for_status()
+
+            return response.json()
+
+        except requests.HTTPError as e:
+            # Too many requests error
+            if response.status_code == 429:
+                print(f"Too many requests. Retrying in 5s. (attempt {attempt}/3)")
+                time.sleep(5)
+                continue
+            # Return None otherwise
+            else:
+                print(f"HTTP error {response.status_code}: {e}")
+                return None
+
+        except requests.RequestException as e:
+            print(f"Request error: {e}")
+            if attempt < 2:
+                time.sleep(2)
+                continue
+            return None
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return None
+
+    print("All retry attemps failed.")
+    return None
 
 
 def resize_image(image_path):
