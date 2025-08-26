@@ -9,6 +9,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 # Contains all label index used by the model.
 CLASS_MAPPING = {
@@ -263,8 +264,7 @@ def segment_images_batch(
 
     print(f"Start batching {len(list_of_images_paths)} images.")
 
-    for index, image_path in enumerate(list_of_images_paths):
-        print(f"Start processing image {index + 1}/{len(list_of_images_paths)}")
+    for image_path in tqdm(list_of_images_paths, desc="Segmenting images"):
         # Resizing images to reduce process time.
         resized_image_path = resize_image(image_path, image_directory, resized_directory)
         list_of_resized_images_paths.append(resized_image_path)

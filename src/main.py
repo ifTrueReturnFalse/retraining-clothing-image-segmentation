@@ -5,7 +5,7 @@ import utils
 # Project variables : to change for your configuration
 image_dir = "content/IMG"
 resized_dir = "content/IMG_resized"
-max_images = 2
+max_images = 5
 
 # Check if all directories are present.
 if not utils.startup_check(image_dir, resized_dir):
