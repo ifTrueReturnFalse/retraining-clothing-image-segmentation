@@ -259,26 +259,36 @@ def segment_images_batch(
 
     # Loading .env file
     load_dotenv()
-    api_token = os.getenv("HUGGINGFACE_API_TOKEN")
+    API_TOKEN = os.getenv("HUGGINGFACE_API_TOKEN")
 
-    for image_path in list_of_images_paths:
+    print(f"Start batching {len(list_of_images_paths)} images.")
+
+    for index, image_path in enumerate(list_of_images_paths):
+        print(f"Start processing image {index + 1}/{len(list_of_images_paths)}")
+        # Resizing images to reduce process time.
         resized_image_path = resize_image(image_path, image_directory, resized_directory)
         list_of_resized_images_paths.append(resized_image_path)
 
+        # Get the image data and extension
         image_data, image_extension = read_image(resized_image_path)
 
+        # Preparing the requests headers.
         headers = {
-            "Authorization": f"Bearer {api_token}",
+            "Authorization": f"Bearer {API_TOKEN}",
             "Content-Type": f"image/{image_extension}",
         }
 
+        # Query the API.
         api_result = segmentation_query(
             data=image_data, api_url=API_URL, headers=headers
         )
 
+        # Get image size
         image_width, image_height = get_image_dimensions(resized_image_path)
+        # Create masks
         combined_masks = create_masks(api_result, image_width, image_height)
 
         batch_segmentations.append(combined_masks)
+        time.sleep(1)
 
     return batch_segmentations, list_of_resized_images_paths
