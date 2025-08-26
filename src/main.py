@@ -1,11 +1,7 @@
 # Packages import
 import os
-from PIL import Image
 import matplotlib.pyplot as plt
-import numpy as np
 from tqdm.notebook import tqdm
-import base64
-import io
 from dotenv import load_dotenv
 import image_handling
 
@@ -20,30 +16,32 @@ api_token = os.getenv("HUGGINGFACE_API_TOKEN")
 
 # Check if image directory is present
 if not os.path.exists(image_dir):
-  os.makedirs(image_dir)
-  print(f"Directory '{image_dir}' created. Move your images files in.")
-  exit()
+    os.makedirs(image_dir)
+    print(f"Directory '{image_dir}' created. Move your images files in.")
+    exit()
 else:
-  print(f"Directory '{image_dir}' present.")
+    print(f"Directory '{image_dir}' present.")
 
 # Get all images file name
 image_paths = [image for image in os.listdir(image_dir)]
 
 # Check if the images are present
 if not image_paths:
-  print(f"No image found in {image_dir}. Please add images.")
-  exit()
+    print(f"No image found in {image_dir}. Please add images.")
+    exit()
 else:
-  print(f"{len(image_paths)} image(s) to process.")
+    print(f"{len(image_paths)} image(s) to process.")
 
 # For now, get the data and the extension of a single file
 data, file_extension = image_handling.read_image(image_dir, image_paths[0])
 
 # API setup
-API_URL = "https://router.huggingface.co/hf-inference/models/sayeed99/segformer_b3_clothes"
+API_URL = (
+    "https://router.huggingface.co/hf-inference/models/sayeed99/segformer_b3_clothes"
+)
 headers = {
-  "Authorization": f"Bearer {api_token}",
-  "Content-Type": f"image/{file_extension}"
+    "Authorization": f"Bearer {api_token}",
+    "Content-Type": f"image/{file_extension}",
 }
 
 # Get the API result
