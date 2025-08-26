@@ -7,6 +7,8 @@ import io
 import numpy as np
 import os
 import time
+import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 
 # Contains all label index used by the model.
 CLASS_MAPPING = {
@@ -133,7 +135,9 @@ def read_image(image_path: Path) -> tuple[bytes, str] | tuple[None, None]:
         return (None, None)
 
 
-def segmentation_query(data: bytes, api_url: str, headers: dict[str, str]):
+def segmentation_query(
+    data: bytes, api_url: str, headers: dict[str, str]
+) -> dict | None:
     """
     Sends the image data to the segformer_b3_clothes API.
     Gets the masks and data results.
@@ -142,6 +146,9 @@ def segmentation_query(data: bytes, api_url: str, headers: dict[str, str]):
       data (bytes): Image binary data.
       api_url (str): URL to send the data to.
       headers (dict): Headers of the request. Must contains Authorization and Content-Type.
+
+    Returns:
+        dict: JSON received from the API. None in case of failure.
     """
     # Trying a maximum of 3 times
     for attempt in range(3):
@@ -181,19 +188,97 @@ def segmentation_query(data: bytes, api_url: str, headers: dict[str, str]):
     return None
 
 
-def resize_image(image_path):
+def resize_image(image_path_str: str, image_directory: str, resized_directory: str) -> Path:
     """
     Resize an image to reduce it's size.
 
     Args:
         image_path (Path): Path to the image file.
+        resized_directory (str): Directory that receive the resized images.
+
+    Returns:
+        Path: Path to the resized image.
     """
-    new_directory = "content/IMG_resized"
     max_size = 512, 512
+
+    image_path = Path(image_directory) / image_path_str
+
     filename, ext = os.path.splitext(os.path.basename(image_path))
 
     with Image.open(image_path) as image:
         image.thumbnail(max_size)
-        image.save(new_directory + "/" + filename + "_resized" + ext, ext[1:])
+        image.save(resized_directory + "/" + filename + "_resized" + ext, ext[1:])
 
-    return Path(new_directory) / str(filename + "_resized" + ext)
+    return Path(resized_directory) / str(filename + "_resized" + ext)
+
+
+def show_result(original_image: Path, combined_masks: np.ndarray) -> None:
+    """
+    Shows the result of the segmentation in a plot.
+
+    Args:
+        original_image (Path): Original image path to display.
+        combined_masks (np.ndarray): Combined segmentation mask with class indices.
+    """
+    with Image.open(original_image) as image:
+        plt.figure(figsize=(15, 5))
+
+        # Position 1
+        plt.subplot(1, 3, 1)
+        plt.imshow(image)
+        plt.title("Original image")
+        plt.axis("off")
+
+        # Position 2
+        combined_masks_wo_background = np.ma.masked_where(
+            combined_masks == 0, combined_masks
+        )
+        plt.subplot(1, 3, 2)
+        plt.imshow(image)
+        plt.imshow(combined_masks_wo_background, alpha=0.7)
+        plt.title("Image masks with original background")
+        plt.axis("off")
+
+        # Position 3
+        plt.subplot(1, 3, 3)
+        plt.imshow(combined_masks)
+        plt.title("Image masks")
+        plt.axis("off")
+
+        plt.tight_layout()
+        plt.show()
+
+
+def segment_images_batch(
+    list_of_images_paths: list[str], image_directory: str, resized_directory: str
+) -> tuple[list[np.ndarray], list[str]]:
+    """ """
+    list_of_resized_images_paths = []
+    batch_segmentations = []
+    API_URL = "https://router.huggingface.co/hf-inference/models/sayeed99/segformer_b3_clothes"
+
+    # Loading .env file
+    load_dotenv()
+    api_token = os.getenv("HUGGINGFACE_API_TOKEN")
+
+    for image_path in list_of_images_paths:
+        resized_image_path = resize_image(image_path, image_directory, resized_directory)
+        list_of_resized_images_paths.append(resized_image_path)
+
+        image_data, image_extension = read_image(resized_image_path)
+
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": f"image/{image_extension}",
+        }
+
+        api_result = segmentation_query(
+            data=image_data, api_url=API_URL, headers=headers
+        )
+
+        image_width, image_height = get_image_dimensions(resized_image_path)
+        combined_masks = create_masks(api_result, image_width, image_height)
+
+        batch_segmentations.append(combined_masks)
+
+    return batch_segmentations, list_of_resized_images_paths
