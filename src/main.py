@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 from dotenv import load_dotenv
 import image_handling
+from pathlib import Path
 
 # Loading .env file
 load_dotenv()
@@ -33,7 +34,11 @@ else:
     print(f"{len(image_paths)} image(s) to process.")
 
 # For now, get the data and the extension of a single file
-data, file_extension = image_handling.read_image(image_dir, image_paths[0])
+# First change max size
+image_path = Path(image_dir) / image_paths[0]
+resized_image = image_handling.resize_image(image_path)
+# Get file data
+data, file_extension = image_handling.read_image(resized_image)
 
 # API setup
 API_URL = (
