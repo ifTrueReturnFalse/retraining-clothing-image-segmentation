@@ -5,6 +5,8 @@ from tqdm.notebook import tqdm
 from dotenv import load_dotenv
 import image_handling
 from pathlib import Path
+from PIL import Image
+import numpy as np
 
 # Loading .env file
 load_dotenv()
@@ -50,4 +52,32 @@ headers = {
 }
 
 # Get the API result
-result = image_handling.segmentation_query(data, API_URL, headers)
+api_result = image_handling.segmentation_query(data, API_URL, headers)
+image_width, image_height = image_handling.get_image_dimensions(resized_image)
+combined_masks = image_handling.create_masks(api_result, image_width, image_height)
+
+with Image.open(resized_image) as image:
+    plt.figure(figsize=(15, 5))
+
+    # Position 1
+    plt.subplot(1, 3, 1)
+    plt.imshow(image)
+    plt.title("Original image")
+    plt.axis("off")
+
+    # Position 2
+    combined_masks_wo_background = np.ma.masked_where(combined_masks == 0, combined_masks)
+    plt.subplot(1, 3, 2)
+    plt.imshow(image)
+    plt.imshow(combined_masks_wo_background)
+    plt.title("Image masks with original background")
+    plt.axis("off")
+
+    # Position 3
+    plt.subplot(1, 3, 3)
+    plt.imshow(combined_masks)
+    plt.title("Image masks")
+    plt.axis("off")
+
+    plt.tight_layout()
+    plt.show()
