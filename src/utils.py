@@ -39,7 +39,7 @@ def check_dir(dir_path: str, is_resized_dir: bool) -> bool:
     Args:
         dir_path (str): Directory path to check.
         is_resized_dir (bool): True if it is an resized directory. False otherwise.
-    
+
     Returns:
         bool: True in all cases in case of a resized directory. In case of an original images directory, True it is present, False otherwise.
     """
@@ -107,14 +107,17 @@ def check_for_images(sample_list: list[str], image_directory: str) -> bool:
         print(f"{len(sample_list)} image(s) to process.")
         return True
 
-def get_all_images_and_masks(image_directory: str, mask_directory: str) -> tuple[list, list]:
+
+def get_all_images_and_masks(
+    image_directory: str, mask_directory: str
+) -> tuple[list, list]:
     """
     Gets all images available and their corresponding masks.
 
     Args:
         image_directory (str): Original images directory path.
         mask_directory (str): Original mask directory path.
-    
+
     Returns
         tuple[list, list]: Returns a tuple with all images paths, and masks paths. Return None if no image found.
     """
@@ -122,7 +125,9 @@ def get_all_images_and_masks(image_directory: str, mask_directory: str) -> tuple
     image_paths = [image for image in os.listdir(image_directory)]
     masks_paths = [mask for mask in os.listdir(mask_directory)]
 
-    if check_for_images(image_paths, image_directory) and check_for_images(masks_paths, mask_directory):
+    if check_for_images(image_paths, image_directory) and check_for_images(
+        masks_paths, mask_directory
+    ):
         return image_paths, masks_paths
     else:
         return None

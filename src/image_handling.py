@@ -10,6 +10,7 @@ import time
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from tqdm import tqdm
+from sklearn.metrics import jaccard_score, f1_score
 
 # Contains all label index used by the model.
 CLASS_MAPPING = {
@@ -189,7 +190,9 @@ def segmentation_query(
     return None
 
 
-def resize_image(image_path_str: str, image_directory: str, resized_directory: str) -> Path:
+def resize_image(
+    image_path_str: str, image_directory: str, resized_directory: str
+) -> Path:
     """
     Resize an image to reduce it's size.
 
@@ -213,16 +216,21 @@ def resize_image(image_path_str: str, image_directory: str, resized_directory: s
     return Path(resized_directory) / str(filename + "_resized" + ext)
 
 
-def show_result(original_image: Path, mask_image: Path, combined_masks: np.ndarray) -> None:
+def show_result(
+    original_image: Path, mask_image: Path, combined_masks: np.ndarray
+) -> None:
     """
     Shows the result of the segmentation in a plot.
 
     Args:
         original_image (Path): Original image path to display.
+        mask_image (Path): Original mask path to display.
         combined_masks (np.ndarray): Combined segmentation mask with class indices.
     """
+    iou, dice = mask_evaluation(mask_image, combined_masks)
+    
     with Image.open(original_image) as image:
-        with Image.open(mask_image) as mask:
+        with Image.open(mask_image) as mask:            
             plt.figure(figsize=(15, 5))
 
             # Position 1
@@ -253,6 +261,7 @@ def show_result(original_image: Path, mask_image: Path, combined_masks: np.ndarr
             plt.title("Original mask")
             plt.axis("off")
 
+            plt.suptitle(f"IoU (Jaccard): {iou:.3f} | Dice (F1): {dice:.3f}", fontsize=16)
             plt.tight_layout()
             plt.show()
 
@@ -260,7 +269,22 @@ def show_result(original_image: Path, mask_image: Path, combined_masks: np.ndarr
 def segment_images_batch(
     list_of_images_paths: list[str], image_directory: str, resized_directory: str
 ) -> tuple[list[np.ndarray], list[str]]:
-    """ """
+    """
+    Handles all the logic to: 
+    - Optimize the images to send to the API.
+    - Read the images.
+    - Send to the API.
+    - Create the masks.
+    - Returns the results.
+
+    Args:
+        list_of_images_paths (list[str]): List of the images to process.
+        image_directory (str): Original images directory path.
+        resized_directory (str): Directory that receive the resized images.
+    
+    Returns:
+        tuple[list[np.ndarray], list[str]]: List of the calculated masks from the API, and the list of resized images.
+    """
     list_of_resized_images_paths = []
     batch_segmentations = []
     API_URL = "https://router.huggingface.co/hf-inference/models/sayeed99/segformer_b3_clothes"
@@ -273,7 +297,9 @@ def segment_images_batch(
 
     for image_path in tqdm(list_of_images_paths, desc="Segmenting images"):
         # Resizing images to reduce process time.
-        resized_image_path = resize_image(image_path, image_directory, resized_directory)
+        resized_image_path = resize_image(
+            image_path, image_directory, resized_directory
+        )
         list_of_resized_images_paths.append(resized_image_path)
 
         # Get the image data and extension
@@ -299,3 +325,27 @@ def segment_images_batch(
         time.sleep(1)
 
     return batch_segmentations, list_of_resized_images_paths
+
+
+def mask_evaluation(
+    original_mask: Path, calculated_mask_data: np.ndarray
+) -> tuple[float, float]:
+    """
+    Evaluates the precision of the model results.
+
+    Args:
+        original_mask (Path): Path to the mask file.
+        calculated_mask_data (np.ndarray): Calculated mask from the model.
+
+    Returns:
+        tuple[float, float]: Tuple with the IoU and Dice score.
+
+    """
+    with Image.open(original_mask) as original_mask_data:
+        y_true = np.array(original_mask_data).ravel()
+        y_pred = calculated_mask_data.ravel()
+
+        iou = jaccard_score(y_true, y_pred, average="micro")
+        dice = f1_score(y_true, y_pred, average="micro")
+
+    return iou, dice
