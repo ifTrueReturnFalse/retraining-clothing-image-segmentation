@@ -213,7 +213,7 @@ def resize_image(image_path_str: str, image_directory: str, resized_directory: s
     return Path(resized_directory) / str(filename + "_resized" + ext)
 
 
-def show_result(original_image: Path, combined_masks: np.ndarray) -> None:
+def show_result(original_image: Path, mask_image: Path, combined_masks: np.ndarray) -> None:
     """
     Shows the result of the segmentation in a plot.
 
@@ -222,32 +222,39 @@ def show_result(original_image: Path, combined_masks: np.ndarray) -> None:
         combined_masks (np.ndarray): Combined segmentation mask with class indices.
     """
     with Image.open(original_image) as image:
-        plt.figure(figsize=(15, 5))
+        with Image.open(mask_image) as mask:
+            plt.figure(figsize=(15, 5))
 
-        # Position 1
-        plt.subplot(1, 3, 1)
-        plt.imshow(image)
-        plt.title("Original image")
-        plt.axis("off")
+            # Position 1
+            plt.subplot(1, 4, 1)
+            plt.imshow(image)
+            plt.title("Original image")
+            plt.axis("off")
 
-        # Position 2
-        combined_masks_wo_background = np.ma.masked_where(
-            combined_masks == 0, combined_masks
-        )
-        plt.subplot(1, 3, 2)
-        plt.imshow(image)
-        plt.imshow(combined_masks_wo_background, alpha=0.7)
-        plt.title("Image masks with original background")
-        plt.axis("off")
+            # Position 2
+            combined_masks_wo_background = np.ma.masked_where(
+                combined_masks == 0, combined_masks
+            )
+            plt.subplot(1, 4, 2)
+            plt.imshow(image)
+            plt.imshow(combined_masks_wo_background, alpha=0.7)
+            plt.title("Image mask with original background")
+            plt.axis("off")
 
-        # Position 3
-        plt.subplot(1, 3, 3)
-        plt.imshow(combined_masks)
-        plt.title("Image masks")
-        plt.axis("off")
+            # Position 3
+            plt.subplot(1, 4, 3)
+            plt.imshow(combined_masks)
+            plt.title("Predicted mask")
+            plt.axis("off")
 
-        plt.tight_layout()
-        plt.show()
+            # Position 4
+            plt.subplot(1, 4, 4)
+            plt.imshow(mask)
+            plt.title("Original mask")
+            plt.axis("off")
+
+            plt.tight_layout()
+            plt.show()
 
 
 def segment_images_batch(
