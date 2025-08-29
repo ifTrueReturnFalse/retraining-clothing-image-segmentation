@@ -2,34 +2,63 @@ import os
 import random
 
 
-def startup_check(image_directory: str, resized_image_directory: str) -> bool:
+def startup_check(
+    image_directory: str,
+    resized_image_directory: str,
+    mask_directory: str,
+    resized_mask_directory: str,
+) -> bool:
     """
     Checks if the directories to run the project are present.
 
     Args:
         image_directory (str): Original images directory path.
         resized_image_directory (str): Directory that receive the resized images.
+        mask_directory (str): Original mask directory path.
+        resized_mask_directory (str): Directory that receive the resized images.
     Returns:
         bool: True if everything is ok to continue. False otherwise.
     """
-    # Check if image directory is present
-    if not os.path.exists(image_directory):
-        os.makedirs(image_directory)
-        print(f"Directory '{image_directory}' created. Move your images files in.")
+    # Check if all directories are present
+    if not (
+        check_dir(image_directory, is_resized_dir=False)
+        and check_dir(mask_directory, is_resized_dir=False)
+        and check_dir(resized_image_directory, is_resized_dir=True)
+        and check_dir(resized_mask_directory, is_resized_dir=True)
+    ):
         return False
     else:
-        print(f"Directory '{image_directory}' present.")
+        return True
 
-    # Check if resized image directory is present
-    if not os.path.exists(resized_image_directory):
-        os.makedirs(resized_image_directory)
-        print(
-            f"Directory '{resized_image_directory}' created."
-        )
+
+def check_dir(dir_path: str, is_resized_dir: bool) -> bool:
+    """
+    Checks if the given directory is present. Creates it otherwise.
+    Handles resized directory differently.
+
+    Args:
+        dir_path (str): Directory path to check.
+        is_resized_dir (bool): True if it is an resized directory. False otherwise.
+    
+    Returns:
+        bool: True in all cases in case of a resized directory. In case of an original images directory, True it is present, False otherwise.
+    """
+    # Checks if the directory exist.
+    if not os.path.exists(dir_path):
+        # If not, creates it.
+        os.makedirs(dir_path)
+        if is_resized_dir:
+            # If it's a resized dir, the script can work without problem.
+            print(f"Directory '{dir_path}' created.")
+            return True
+        else:
+            # In case of a original image directory, alert the user to populate the directory with files.
+            print(f"Directory '{dir_path}' created. Move your images files in.")
+            return False
     else:
-        print(f"Directory '{resized_image_directory}' present.")
-
-    return True
+        # Tell the user that the directory is present and ready to go.
+        print(f"Directory '{dir_path}' present.")
+        return True
 
 
 def get_images_sample(image_directory: str, sample_size: int) -> list[str] | None:
@@ -45,7 +74,7 @@ def get_images_sample(image_directory: str, sample_size: int) -> list[str] | Non
     """
     # Get all images file name
     image_paths = [image for image in os.listdir(image_directory)]
-    
+
     # Check if the asked sample size is too big.
     if sample_size > len(image_paths):
         print("Sample size can't be greater than images file count.")
