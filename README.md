@@ -10,7 +10,7 @@
 
 ---
 
-🇫🇷 Version française
+## 🇫🇷 Version française
 
 Ceci est le dépôt GitHub d’un projet réalisé dans le cadre de ma formation **Développeur IA** avec OpenClassrooms.
 L’objectif du projet est de réaliser une **segmentation d’images de vêtements**, à partir d’un dataset d’images et de masques.
@@ -79,7 +79,9 @@ poetry run python src/main.py
 
 Les résultats de segmentation s’afficheront directement sous forme de graphiques.
 
-🇬🇧 English version
+---
+
+## 🇬🇧 English version
 
 This is the GitHub repository of a project carried out as part of my **AI Developer** training with OpenClassrooms.
 The goal of the project is to perform **clothing image segmentation**, using a dataset of images and masks.
@@ -148,3 +150,4 @@ poetry run python src/main.py
 ```
 
 Segmentation results will be displayed directly as plots.
+
